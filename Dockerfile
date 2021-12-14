@@ -1,4 +1,4 @@
-FROM golang:1.16.12-buster as BUILD
+FROM golang:alpine as BUILD
 
 WORKDIR /app
 
@@ -6,13 +6,10 @@ WORKDIR /app
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
-
 COPY *.go ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -o main main.go
 
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
+FROM scratch
 COPY --from=BUILD /app/main .
 CMD ["./main"]
