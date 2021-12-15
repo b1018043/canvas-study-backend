@@ -13,8 +13,14 @@ func main() {
 			"mes": "ok",
 		})
 	})
+
+	r.GET("/ws", func(ctx *gin.Context) {
+		m.HandleRequest(ctx.Writer, ctx.Request)
+	})
+
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		m.Broadcast(msg)
 	})
+
 	r.Run(":8080")
 }
