@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
@@ -14,9 +15,15 @@ type WsResponse struct {
 	Y    int64  `json:"y"`
 }
 
+type MoveRequest struct {
+	X int64 `json:"x"`
+	Y int64 `json:"y"`
+}
+
 const (
 	JOIN  string = "join"
 	LEAVE string = "leave"
+	MOVE  string = "move"
 )
 
 func main() {
@@ -69,7 +76,21 @@ func main() {
 	})
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		m.BroadcastOthers(msg, s)
+		var mvreq MoveRequest
+		if err := json.Unmarshal(msg, &mvreq); err != nil {
+			log.Fatalln("failed unmarshal json")
+		}
+		wr := &WsResponse{
+			Type: MOVE,
+			ID:   clientid[s],
+			X:    mvreq.X,
+			Y:    mvreq.Y,
+		}
+		if bytes, err := json.Marshal(wr); err != nil {
+			log.Fatalln("failed marshal")
+		} else {
+			m.BroadcastOthers(bytes, s)
+		}
 	})
 
 	r.Run(":8080")
