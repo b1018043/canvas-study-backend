@@ -14,6 +14,11 @@ type WsResponse struct {
 	Y    int64  `json:"y"`
 }
 
+const (
+	JOIN  string = "join"
+	LEAVE string = "leave"
+)
+
 func main() {
 	r := gin.Default()
 	m := melody.New()
@@ -36,7 +41,7 @@ func main() {
 		clientid[s] = id
 		id++
 		wr := &WsResponse{
-			Type: "join",
+			Type: JOIN,
 			ID:   clientid[s],
 		}
 		if bytes, err := json.Marshal(wr); err != nil {
@@ -46,9 +51,13 @@ func main() {
 		}
 	})
 
+	m.HandleMessage(func(s *melody.Session, b []byte) {
+		m.BroadcastOthers(b, s)
+	})
+
 	m.HandleDisconnect(func(s *melody.Session) {
 		wr := &WsResponse{
-			Type: "leave",
+			Type: LEAVE,
 			ID:   clientid[s],
 		}
 		if bytes, err := json.Marshal(wr); err != nil {
