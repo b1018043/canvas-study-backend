@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"example.com/rcs/pkg/server"
+	"github.com/b1018043/canvas-study-backend/pkg/server"
 )
 
 func main() {

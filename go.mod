@@ -1,4 +1,4 @@
-module example.com/rcs
+module github.com/b1018043/canvas-study-backend
 
 go 1.16
 
