@@ -1,24 +1,10 @@
 package server
 
 import (
-	"encoding/json"
-	"log"
-
+	"github.com/b1018043/canvas-study-backend/pkg/server/controller"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
 )
-
-type WsResponse struct {
-	Type string `json:"type"`
-	ID   uint64 `json:"id"`
-	X    int64  `json:"x"`
-	Y    int64  `json:"y"`
-}
-
-type MoveRequest struct {
-	X int64 `json:"x"`
-	Y int64 `json:"y"`
-}
 
 const (
 	JOIN  string = "join"
@@ -28,16 +14,12 @@ const (
 
 var Server *gin.Engine
 
-var Melody *melody.Melody
+var m *melody.Melody
 
 func init() {
 	Server = gin.Default()
 
-	Melody = melody.New()
-
-	var id uint64 = 0
-
-	clientid := make(map[*melody.Session]uint64)
+	m = melody.New()
 
 	Server.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{
@@ -46,56 +28,13 @@ func init() {
 	})
 
 	Server.GET("/ws", func(ctx *gin.Context) {
-		Melody.HandleRequest(ctx.Writer, ctx.Request)
+		m.HandleRequest(ctx.Writer, ctx.Request)
 	})
 
-	Melody.HandleConnect(func(s *melody.Session) {
-		clientid[s] = id
-		id++
-		wr := &WsResponse{
-			Type: JOIN,
-			ID:   clientid[s],
-		}
-		if bytes, err := json.Marshal(wr); err != nil {
-			// Nothing to do
-		} else {
-			Melody.BroadcastOthers(bytes, s)
-		}
-	})
+	m.HandleConnect(controller.ConnectHandlerGenerator(m))
 
-	Melody.HandleMessage(func(s *melody.Session, b []byte) {
-		Melody.BroadcastOthers(b, s)
-	})
+	m.HandleDisconnect(controller.DisconnectHandlerGenerator(m))
 
-	Melody.HandleDisconnect(func(s *melody.Session) {
-		wr := &WsResponse{
-			Type: LEAVE,
-			ID:   clientid[s],
-		}
-		if bytes, err := json.Marshal(wr); err != nil {
-			// Nothing to do
-		} else {
-			Melody.BroadcastOthers(bytes, s)
-			delete(clientid, s)
-		}
-	})
-
-	Melody.HandleMessage(func(s *melody.Session, msg []byte) {
-		var mvreq MoveRequest
-		if err := json.Unmarshal(msg, &mvreq); err != nil {
-			log.Fatalln("failed unmarshal json")
-		}
-		wr := &WsResponse{
-			Type: MOVE,
-			ID:   clientid[s],
-			X:    mvreq.X,
-			Y:    mvreq.Y,
-		}
-		if bytes, err := json.Marshal(wr); err != nil {
-			log.Fatalln("failed marshal")
-		} else {
-			Melody.BroadcastOthers(bytes, s)
-		}
-	})
+	m.HandleMessage(controller.MessageHandlerGenerator(m))
 
 }
