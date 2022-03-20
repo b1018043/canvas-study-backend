@@ -1,5 +1,5 @@
 # canvas-study-backend
-(canvas-study)[https://github.com/b1018043/canvas-study]のバックエンド
+[canvas-study](https://github.com/b1018043/canvas-study)のバックエンド
  
 ## 利用手順
 ## docker
